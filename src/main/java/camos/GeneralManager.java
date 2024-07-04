@@ -3,9 +3,8 @@ package camos;
 import camos.mobilitydemand.AgentCollector;
 import camos.mobilitydemand.PostcodeManager;
 import camos.mobilitydemand.RequestDataAdjuster;
-import camos.mode_execution.*;
-import camos.mode_execution.groupings.Match;
-import camos.mode_execution.mobilitymodels.*;
+import camos.modeexecution.*;
+import camos.modeexecution.groupings.Match;
 import org.opengis.referencing.operation.TransformException;
 
 import java.io.*;
@@ -18,51 +17,23 @@ import java.util.stream.Stream;
 
 public class GeneralManager {
 
-
-    public static boolean handleLost = true;
-    public static boolean plzRadius = false;
-    public static double upperRadius;
-    public static double lowerRadius;
-    public static double percentOfWillingStudents = 100;
-
-    public static MobilityType compareMode = MobilityType.EVERYBODYDRIVES; //TODO
     public static Random random = new Random(1234);
-
-
-    public static double studentCarConsumptionPerKm;
-    public static double studentCarCo2EmissionPerLiter;
-    public static double studentCarPricePerLiter;
-    public static int studentCarSeatCount = 5;
-    public static double busConsumptionPerKm;
-    public static double busCo2EmissionPerLiter;
-    public static double busPricePerLiter;
-    public static int busSeatCount = 10;
-    public static boolean busWithDriver = false;
-    public static int busCount;
-    public static long stopTime;
-    public static long timeInterval;
-    public static long acceptedWalkingDistance;
-    public static String acceptedDrivingTime;
-    public static String acceptedRidepoolingTime;
-    public static Coordinate centralCoordinate;
-    public static int countOfGroups;
-    public static double radiusToExclude;
-    public static Request compareRequest = null;
-    public static Match compareMatch = null;
-
+    public static Request compareRequest = null; //TODO
+    public static Match compareMatch = null; //TODO
     public static DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
-
     public static DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
-
     public static boolean useGraphhopperForTests = true;
 
 
     public static void main(String[] args) throws Exception {
+        Map<Coordinate,String> stops = new HashMap<>();
+        stops.put(new Coordinate(9.950588768110487,49.800803730211925),"01.01.2000 13:12:00-01.01.2000 13:18:00");
+        //Match match = new Match(new ArrayList<>(),stops,null,null,new Coordinate(9.95217857027435,49.78715064067901),new Coordinate(9.971629846615247,49.78358231731071),Requesttype.DRIVETOUNI,);
 
-        /*
-        MobilityMode mode = new EverybodyDrives();
+        
+        /*MobilityMode mode = new EverybodyDrives();
         ModeExecutionManager.testMode(mode);
-        */
+        mode.writeResultsToFile();*/
 
         if(args.length<2){
             System.out.println("Es fehlen Argumente.");

@@ -1,0 +1,17 @@
+Commands:
+
+"startModes"
+"sources\config.json"
+
+"adjustRequestData" "sources\agentDistribution\1\requestData\1\requestDataRaw.csv"
+
+"addRequestData" "sources\agentDistribution\1\usefulAgents.json"
+"sources\agentDistribution\1\requestData\1\requestData.csv"
+"sources\agentDistribution\1\requestData\1\agentsWithRequests.json"
+
+"createPostcodePairs" "sources\Student_home_distribution_with_faculty_postcode.csv"
+
+"createRadiusFile"
+"sources\all_postcode_pairs.json"
+55.0
+

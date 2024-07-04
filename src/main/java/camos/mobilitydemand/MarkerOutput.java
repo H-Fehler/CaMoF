@@ -1,6 +1,6 @@
 package camos.mobilitydemand;
 
-import camos.mode_execution.Coordinate;
+import camos.modeexecution.Coordinate;
 import org.apache.commons.io.IOUtils;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;

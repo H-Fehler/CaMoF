@@ -1,0 +1,68 @@
+{
+  "global" :  {
+    "required" : ["config","class name","comparing","resultsFolder"],
+    "optional" : ["compare to"],
+    "config" : {
+      "postcode mapping" : { "integer" : {"longitude": "double", "latitude": "double"}}
+    }
+  },
+  "testmode" : {
+    "class name" : "TestMode",
+    "comparing" : false,
+    "resultsFolder" : "results\\everybodyDrives",
+    "config" : {
+    }
+  },
+  "everybodyDrives" : {
+    "class name" : "EverybodyDrives",
+    "comparing" : false,
+    "resultsFolder" : "results\\everybodyDrives",
+    "config" : {
+      "postcode mapping" : "JSONObject",
+      "studentCarConsumptionPerKm" : "double",
+      "studentCarCo2EmissionPerLiter" : "double",
+      "studentCarPricePerLiter" : "double"
+    }
+  },
+  "ridesharing" : {
+    "class name" : "RideSharing",
+    "comparing" : true,
+    "compare to" : "everybodyDrives",
+    "resultsFolder" : "results\\ridesharing",
+    "config" : {
+      "student car seat count" : "integer",
+      "time interval" : "long",
+      "accepted walking distance" : "double",
+      "accepted ridesharing time" : "String",
+      "postcode mapping" : "JSONObject",
+      "studentCarConsumptionPerKm" : "double",
+      "studentCarCo2EmissionPerLiter" : "double",
+      "studentCarPricePerLiter" : "double",
+      "stop time" : "long",
+      "handleLost" : "boolean"
+    }
+  },
+  "ridepooling" : {
+    "class name" : "RidePooling",
+    "comparing" : true,
+    "compare to" : "everybodyDrives",
+    "resultsFolder" : "results\\ridepooling",
+    "config" : {
+      "bus count" : "integer",
+      "bus seat count" : "integer",
+      "busWithDriver" : "boolean",
+      "busConsumptionPerKm" : "double",
+      "busCo2EmissionPerLiter" : "double",
+      "busPricePerLiter" : "double",
+      "time interval" : "long",
+      "accepted ridepooling time" : "String",
+      "postcode mapping" : "JSONObject",
+      "depot mapping" : "JSONArray",
+      "central depot" :  "boolean",
+      "stop time" : "long",
+      "centralCoordinate" : "JSONObject",
+      "countOfGroups" : "integer",
+      "radiusToExclude" : "double"
+    }
+  }
+}

@@ -8,6 +8,10 @@ gradle/
 auxil/
 
 results/
+target/
+target.zip
+sources/oldRadiusFiles
+r scripts/
 
 
 sources/map.geojson

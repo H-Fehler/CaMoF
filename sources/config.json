@@ -1,5 +1,5 @@
 {"lower radius": 2.0,"upper radius": 25.0,"bus count": 250,"bus seat count": 6,
-  "busWithDriver": false,"student car seat count": 5,"time interval": 15,
+  "busWithDriver": false,"student car seat count": 5,"time interval": 15,"handleLost": true,
   "accepted walking distance": 1200,"accepted ridesharing time": "x + log1.4(x)",
   "accepted ridepooling time":  "x + log1.2(x)",
   "postcode mapping": {"97070" : {"longitude":9.930491727317067, "latitude":49.79077707173787},
@@ -10,13 +10,13 @@
   "studentCarPricePerLiter": 1.719,"busConsumptionPerKm": 0.038,
   "busCo2EmissionPerLiter": 2578.947368,"busPricePerLiter": 1.719,"stop time": 1,
   "request file": "sources\\agentDistribution\\1\\requestData\\1\\agentsWithRequests.json",
-  "postcode file": "sources\\Student_home_distribution_with_faculty_postcode.csv",
-  "postcodePairFile": "sources\\all_postcode_pairs.json",
+  "osm.pbf file": "sources\\merged.osm.pbf",
+  "geojson file": "sources\\map.geojson",
   "centralCoordinate": {"longitude":9.951222228079288, "latitude":49.79057843998488},
   "central depot": true,"countOfGroups": 18, "radiusToExclude": 3000,
   "depot mapping": [{"longitude":9.77714538574219, "latitude":49.79057843998488},{"longitude":10.1253122091293,
     "latitude":49.79057843998488},{"longitude":9.951222228079288, "latitude":49.6779658273723},{"longitude":9.951222228079288, "latitude":49.9031910525975}],
-  "modejson": "modes.json", "modes": ["EverybodyDrives","Ridesharing","Ridepooling"]
+  "modejson": "sources\\modes.json", "modes": ["everybodyDrives","ridesharing","ridepooling"]
 }
 
 
