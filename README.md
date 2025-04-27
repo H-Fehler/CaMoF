@@ -1,3 +1,3 @@
-# CaMoS (Campus Mobility Simulations)
+# CaMoF (Campus Mobility Framework)
 
-CaMoS is a framework for implementing and evaluating mobility modes for the university campus mobility.
+CaMoF is a framework for implementing and evaluating mobility modes for the university campus mobility.
