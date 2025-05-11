@@ -1,2 +1,2 @@
-rootProject.name = "CaMoS"
+rootProject.name = "CaMoF"
 
