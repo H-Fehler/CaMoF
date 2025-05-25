@@ -40,7 +40,6 @@ public class EverybodyDrives extends MobilityMode {
     public void prepareMode(List<Agent> agents){
 
         try{
-            seatCount = (int) ModeExecutionManager.configValues.get("student car seat count");
             co2EmissionPerLiter = Double.parseDouble(String.valueOf(ModeExecutionManager.configValues.get("studentCarCo2EmissionPerLiter")));
             pricePerLiter = Double.parseDouble(String.valueOf(ModeExecutionManager.configValues.get("studentCarPricePerLiter")));
             consumptionPerKm = Double.parseDouble(String.valueOf(ModeExecutionManager.configValues.get("studentCarConsumptionPerKm")));

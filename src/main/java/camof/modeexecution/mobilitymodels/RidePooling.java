@@ -34,6 +34,7 @@ import camof.modeexecution.mobilitymodels.tsphelpers.TransportCosts;
 import org.apache.commons.lang3.StringUtils;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
+import org.json.JSONObject;
 import org.locationtech.jts.geom.CoordinateXY;
 
 import java.io.File;
@@ -45,151 +46,75 @@ import java.util.stream.Collectors;
 
 public class RidePooling extends MobilityMode {
 
+    String name = "ridepooling";
+    List<Event> sortedEvents;
+    LocalDateTime currentEventTime;
+    List<AgentWithConstraints> agents;
     int seatCount;
     double co2EmissionPerLiter;
     double pricePerLiter;
     double consumptionPerKm;
-
-    MobilityMode compareMode;
-
-    public Map<Vehicle, Double> vehicleEmptyDistances;
-    public Map<Ride, Double> emptyDistances;
-
-    public Map<Vehicle, Coordinate> vehicleToDepot;
-
-    public Map<Coordinate, Integer> depotCapacity;
-
-    public List<Coordinate> depots;
-
-    public List<Agent> unwillingAgents;
-
-    Map<String, Coordinate> postcodeToCoordinate;
-
     public Map<List<Long>, LocalDateTime> matchToPossibleNewIntervalStartTime;
-
-    LocalDateTime timeCounter;
-
+    public long stopTime;
+    long timeInterval;
+    public int busCount;
+    public String acceptedRideTimeString;
     public Map<Request, Match> assignedRequests;
-
-    public Coordinate centralCoordinate;
-
-    public Coordinate compareVector;
-
-    public int countOfGroups;
-
-    public double compareAngle;
-
-    public double radiusToExclude;
-
-    public Map<Agent, Double> emissions;
-
-    public Map<Agent, Double> costs;
-
-    public Map<Agent, Double> kmTravelled;
-
-    public Map<Agent, Double> minutesTravelled;
-
-    public Map<Vehicle, Double> vehicleEmissions;
-
-    public Map<Vehicle, Double> vehicleCosts;
-
-    public Map<Vehicle, Double> vehicleKmTravelled;
-
-    public Map<Vehicle, Double> vehicleMinutesTravelled;
-
     public Map<LocalDateTime, List<Request>> requestFinder;
     public int requestSum;
     public int requestCounter;
     public Map<Agent, List<Match>> agentToMatches;
-
-    public Map<Agent, List<Ride>> agentToRides;
-
-    public List<Ride> rides;
-
     public List<Match> activeMatches;
-
     public List<Match> finishedMatches;
-
-    public List<Agent> drivingAgents;
-
     public List<Request> pendingHomeRequests;
-
     public Map<String, Long> secondsBetweenDropOffs;
-
     public Map<Match, LocalDateTime> matchToStartTime;
-
     public Map<Match, LocalDateTime> matchToEndTime;
-
     public Map<LocalDateTime, List<Match>> timeToMatch;
-
     public Map<Match, VehicleRoutingProblemSolution> matchToSolution;
-
-
     public Map<Match, VehicleRoutingProblemSolution> temporaryMatchToSolution;
 
+    public Coordinate centralCoordinate;
+    public Coordinate compareVector;
+    public int countOfGroups;
+    public double compareAngle;
+    public double radiusToExclude;
     public Map<Integer, List<Request>> groupToRequests;
-
     public Map<Integer, List<MiniBus>> groupToMiniBusses;
 
     public List<Vehicle> vehicles;
-
     public Map<Vehicle, Map<LocalDateTime, Coordinate>> vehiclePositions;
-
     public Map<Vehicle, List<Match>> vehicleToMatches;
-
     public Map<Vehicle, List<Ride>> vehicleToRides;
-
+    public Map<Vehicle, Double> vehicleEmissions;
+    public Map<Vehicle, Double> vehicleCosts;
+    public Map<Vehicle, Double> vehicleKmTravelled;
+    public Map<Vehicle, Double> vehicleMinutesTravelled;
+    public Map<Vehicle, Double> vehicleEmptyDistances;
+    public Map<Ride, Double> emptyDistances;
+    public Map<Vehicle, Coordinate> vehicleToDepot;
+    public Map<Coordinate, Integer> depotCapacity;
+    public List<Coordinate> depots;
     public Map<Vehicle, Ride> lastVehicleRide;
-
     public Map<Vehicle, Long> rideTimeBackToDepot;
 
-    public long stopTime;
 
-    public int busCount;
-
-    public String acceptedRideTimeString;
-
-
-    public RidePooling(Map<String, Coordinate> postcodeToCoordinate, MobilityMode compareMode){
-        this.graphHopper= ModeExecutionManager.graphHopper;
-        this.postcodeToCoordinate = postcodeToCoordinate;
-        this.compareMode = compareMode;
-    }
-
-    public String getName(){
-        return "ridepooling";
-    }
-
-
-    public void prepareMode(List<Agent> agents) {
-        this.agents = new ArrayList<>(agents);
-
-        if(this.centralCoordinate==null || this.countOfGroups == 0 || this.radiusToExclude == 0){//TODO
-            throw new RuntimeException("Run 'prepareMore()' first!");
-        }
-        unwillingAgents = new ArrayList<>();
-        this.rides = new ArrayList<>();
-        assignedRequests = new HashMap<>();
+    public RidePooling(){
+        super();
+        comparing = true;
+        this.compareMode = ModeExecutionManager.finishedModes.get(ModeExecutionManager.compareModes.get(this.getName()));
         this.compareAngle = (double) 360 / countOfGroups;
+        sortedEvents = new ArrayList<>();
+        assignedRequests = new HashMap<>();
         compareVector = new Coordinate(0.0, 1.0);
-        emissions = new HashMap<>();
-        costs = new HashMap<>();
-        kmTravelled = new HashMap<>();
-        minutesTravelled = new HashMap<>();
         agentToMatches = new HashMap<>();
-        agentToRides = new HashMap<>();
         matchToStartTime = new HashMap<>();
         matchToEndTime = new HashMap<>();
         matchToSolution = new HashMap<>();
         timeToMatch = new HashMap<>();
         activeMatches = new ArrayList<>();
         finishedMatches = new ArrayList<>();
-        drivingAgents = new ArrayList<>();
         pendingHomeRequests = new ArrayList<>();
-        oneWayCosts = new HashMap<>();
-        oneWayEmissions = new HashMap<>();
-        oneWayKmTravelled = new HashMap<>();
-        oneWayMinutesTravelled = new HashMap<>();
         groupToRequests = new HashMap<>();
         groupToMiniBusses = new HashMap<>();
         vehicles = new ArrayList<>();
@@ -207,12 +132,60 @@ public class RidePooling extends MobilityMode {
         vehicleToDepot = new HashMap<>();
         vehicleEmptyDistances = new HashMap<>();
         emptyDistances = new HashMap<>();
+    }
 
-        String timeString = "02.02.2023 04:00:00"; //TODO
-        LocalDateTime startTime = LocalDateTime.parse(timeString, GeneralManager.dateTimeFormatter);
+    public String getName(){
+        return "ridepooling";
+    }
 
+
+    public void prepareMode(List<Agent> agents) {
+        seatCount = (int) ModeExecutionManager.configValues.get("bus seat count");
+        co2EmissionPerLiter = (double) ModeExecutionManager.configValues.get("busCo2EmissionPerLiter");
+        pricePerLiter = (double) ModeExecutionManager.configValues.get("busPricePerLiter");
+        consumptionPerKm = (double) ModeExecutionManager.configValues.get("busConsumptionPerKm");
+        timeInterval = (long) ModeExecutionManager.configValues.get("time interval");
+        stopTime = (long) ModeExecutionManager.configValues.get("stop time");
+        acceptedRideTimeString = (String) ModeExecutionManager.configValues.get("accepted ridepooling time");
+        secondsBetweenDropOffs = new HashMap<>();
+        centralCoordinate = new Coordinate(((JSONObject)ModeExecutionManager.configValues.get("centralCoordinate")).getDouble("longitude"),((JSONObject)ModeExecutionManager.configValues.get("centralCoordinate")).getDouble("latitude"));
+        countOfGroups = (int) ModeExecutionManager.configValues.get("countOfGroups");
+        radiusToExclude = (double) ModeExecutionManager.configValues.get("radiusToExclude");
+        busCount = (int) ModeExecutionManager.configValues.get("bus count");
+
+        setupDepots(LocalDateTime.parse("02.02.2023 04:00:00", GeneralManager.dateTimeFormatter));//TODO
+        CommonFunctionHelper.calculateSecondsBetweenDropOffs(this.secondsBetweenDropOffs, ModeExecutionManager.postcodeToCoordinate);
+
+
+        this.agents = new ArrayList<>();
+        for(Agent agent : agents){
+            AgentWithConstraints agentWithConstraints = new AgentWithConstraints(agent);
+            agentWithConstraints.setTimeIntervalInMinutes((Long) ModeExecutionManager.configValues.get("time interval"));
+            Request agentRequest = agentWithConstraints.getRequest();
+            agentRequest.setAgent(agentWithConstraints);
+            agentRequest.setArrivalInterval(new TimeInterval(agentRequest.getFavoredArrivalTime().minusMinutes(timeInterval),agentRequest.getFavoredArrivalTime().plusMinutes(timeInterval)));
+            agentRequest.setDepartureInterval(new TimeInterval(agentRequest.getFavoredDepartureTime(),agentRequest.getFavoredDepartureTime().plusMinutes(2*timeInterval)));
+            this.agents.add(agentWithConstraints); //todo
+        }
+        List<Agent> willingAgents = new ArrayList<>(this.agents);
+        CommonFunctionHelper.filterWilling(ModeExecutionManager.percentOfWillingStudents,willingAgents,unwillingAgents);
+        for(Agent agent : this.unwillingAgents){
+            CommonFunctionHelper.letAgentDriveNormally(agent,sortedEvents,matchToStartTime);
+        }
+
+        for (Agent agent : willingAgents) {
+            Request request = agent.getRequest();
+            this.sortedEvents.add(new Event("requestArrival",request.getRequestTime(),request));
+            requestSum++;
+        }
+        Collections.sort(this.sortedEvents);
+        CommonFunctionHelper.calculateAcceptedDrivingTimes(this.agents, this.compareMode, "x + log1.2(x)"); //TODO
+    }
+
+
+    private void setupDepots(LocalDateTime startTime){
         List<Coordinate> depots = new ArrayList<>();
-        depots.add(this.centralCoordinate);
+        depots.add(this.centralCoordinate);//TODO
         depots.add(new Coordinate(9.77714538574219, 49.79057843998488));
         depots.add(new Coordinate(10.1253122091293, 49.79057843998488));
         depots.add(new Coordinate(9.951222228079288, 49.6779658273723));
@@ -263,43 +236,6 @@ public class RidePooling extends MobilityMode {
                 this.depotCapacity.put(d, depotVehicles.get(d));
             }
         }
-
-        CommonFunctionHelper.calculateSecondsBetweenDropOffs(this.secondsBetweenDropOffs,this.postcodeToCoordinate);
-
-        List<Agent> willingAgents = new ArrayList<>(agents);
-        if (ModeExecutionManager.percentOfWillingStudents < 100.0) {
-            List<Agent> unWillingAgents = new ArrayList<>(agents);
-            willingAgents.removeIf(a -> !a.isWillingToUseAlternatives());
-            unWillingAgents.removeIf(Agent::isWillingToUseAlternatives);
-            unwillingAgents = unWillingAgents;
-            for (Agent agent : unWillingAgents) {
-                handleDrivingAgent(agent.getRequest());
-            }
-        }
-
-        Map<LocalDateTime, List<Request>> requestFinder = new HashMap<>();
-        List<Request> finderRequests;
-        for (Agent agent : willingAgents) {
-            Request request = agent.getRequest();
-            if (requestFinder.containsKey(request.getRequestTime())) {
-                finderRequests = requestFinder.get(request.getRequestTime());
-            } else {
-                finderRequests = new ArrayList<>();
-            }
-            finderRequests.add(request);
-            requestFinder.put(request.getRequestTime(), finderRequests);
-            requestSum++;
-        }
-        this.requestFinder = requestFinder;
-
-        calculateAcceptedDrivingTimes(new ArrayList<>(agents.stream().filter(a -> a instanceof AgentWithConstraints).map(a -> (AgentWithConstraints) a).toList()),this.compareMode);
-    }
-
-
-    public void prepareMore(Coordinate centralCoordinate, int countOfGroups, double radiusToExclude){
-        this.centralCoordinate = centralCoordinate;
-        this.countOfGroups = countOfGroups;
-        this.radiusToExclude = radiusToExclude;
     }
 
 
@@ -368,37 +304,46 @@ public class RidePooling extends MobilityMode {
 
 
     public void startMode() {
-        String timeString = "01.02.2023 18:00:00";
-        LocalDateTime startTime = LocalDateTime.parse(timeString, GeneralManager.dateTimeFormatter);
-        timeString = "03.02.2023 22:00:00";
-        LocalDateTime endTime = LocalDateTime.parse(timeString, GeneralManager.dateTimeFormatter);
-        List<LocalDateTime> times = GeneralManager.generateTimeScale(startTime, endTime).toList();
-        requestCounter = 0;
-        int lastPercent = -1;
-        for (LocalDateTime time : times) {
-            this.timeCounter = time;
-            if (timeToMatch.containsKey(timeCounter)) {
-                for (Match match : timeToMatch.get(timeCounter)) {
-                    calculateMetrics(matchToRide(match));
-                }
-            }
-            if (requestFinder.containsKey(timeCounter)) {
-                //System.out.println(timeCounter);
-                for (Request request : requestFinder.get(timeCounter)) {
-                    requestCounter++;
-                    int countOf5percentSteps = (int) Math.floor(((double) requestCounter / requestSum) * 20);
-                    String progressBar = "|" + "=".repeat(countOf5percentSteps) + " ".repeat(20 - countOf5percentSteps) + "|" + "\r";
-                    findMatch(request);
-                    if (countOf5percentSteps > lastPercent) {
-                        System.out.print(progressBar);
-                    }
-                    lastPercent = countOf5percentSteps;
-                    //System.out.println(requestCounter + ": " + woulddrivebyCounter + " and " + againCounter);
-                    //System.out.println("match false because of acceptedDriveTime: " + acceptedDriveTimeCounter + ", noSolutionFound: " + noSolutionFoundCounter + ", timeConstraints: " + timeConstraintsCounter);
-                }
-            }
-
+        if(this.centralCoordinate==null || this.countOfGroups == 0 || this.radiusToExclude == 0){//TODO
+            throw new RuntimeException("Run 'prepareMore()' first!");
         }
+
+        requestCounter = 0;
+        String progressBar;
+        int requestSum = this.sortedEvents.size();
+        double eventSum = 1.5 * this.sortedEvents.size();
+        int requestCounter = 0;
+        int countOf5percentSteps;
+        int countOf5percentStepsForRequests=0;
+        String lastProgress = "";
+
+        while(!this.sortedEvents.isEmpty()){
+            Event event = this.sortedEvents.get(0);
+            currentEventTime = event.getEventStart();
+            if(event.getType().equals("requestArrival")){
+                requestCounter++;
+                Request request = (Request) event.getEventObject();
+                findMatch(request);
+                countOf5percentStepsForRequests = (int) Math.floor(((double) requestCounter / requestSum) * 20);
+            }else if(event.getType().equals("rideStart")) {
+                Match match = (Match) event.getEventObject();
+                calculateMetrics(matchToRide(match));
+            }
+            this.sortedEvents.remove(0);
+            Collections.sort(sortedEvents);
+
+            countOf5percentSteps = (int) Math.floor(((eventSum-(sortedEvents.size()-1))/eventSum) * 20);
+            try{
+                progressBar = "Request progress: |" + "=".repeat(countOf5percentStepsForRequests) + " ".repeat(20 - countOf5percentStepsForRequests) + "|\t\tTotal progress: |" + "=".repeat(countOf5percentSteps) + " ".repeat(20 - countOf5percentSteps) + "|\r";
+                if (!progressBar.equals(lastProgress)) {
+                    System.out.print(progressBar);
+                    lastProgress = progressBar;
+                }
+            }catch (Exception e){
+                int f = 2;
+            }
+        }
+
         for (Vehicle v : lastVehicleRide.keySet()) {
             Map<LocalDateTime, Coordinate> positions = vehiclePositions.get(v);
             positions.put(lastVehicleRide.get(v).getEndTime().plusMinutes(1L).plusMinutes(rideTimeBackToDepot.get(v)), vehicleToDepot.get(v));
@@ -409,7 +354,6 @@ public class RidePooling extends MobilityMode {
             r.setExtraStops(stops);
             calculateMetrics(r);
         }
-        int f = 2;
     }
 
     public boolean checkIfConstraintsAreBroken(List<Agent> agents){
@@ -493,7 +437,7 @@ public class RidePooling extends MobilityMode {
         Map<Set<Object>,Double> oneWayMinutesTravelled = this.getOneWayMinutesTravelled();
         Map<Agent, List<Ride>> agentToRides = this.getAgentToRides();
         List<Match> matches = this.finishedMatches;
-        List<Agent> drivingAgents = this.drivingAgents;
+        List<Agent> drivingAgents = this.drivers;
         List<Ride> rides = this.rides;
         Map<Vehicle,Double> vehicleEmptyDistances = this.vehicleEmptyDistances;
         Map<Ride,Double> emptyDistances = this.emptyDistances;
@@ -521,10 +465,6 @@ public class RidePooling extends MobilityMode {
         int countOfNonDriversToUni=0;
         double averageSeatCountHomeForNonDrivers = 0;
         int countOfNonDriversHome=0;
-
-        if(this.checkIfConstraintsAreBroken(agents)){
-            throw new RuntimeException("ridepooling constraints.");
-        }
 
         List<String> dataLines = new ArrayList<>();
         List<String> dataLines2 = new ArrayList<>();
@@ -761,7 +701,7 @@ public class RidePooling extends MobilityMode {
 
     public void handleDrivingAgent(Request request) {
         Agent agent = request.getAgent();
-        drivingAgents.add(agent);
+        drivers.add(agent);
         List<Ride> agentRides = new ArrayList<>();
         List<Agent> agentList = new ArrayList<>();
         agentList.add(agent);
@@ -821,14 +761,17 @@ public class RidePooling extends MobilityMode {
         vehiclePositions.get(match.getVehicle()).remove(matchToEndTime.get(match));
 
         LocalDateTime startTime = this.matchToStartTime.get(match);
-        if (startTime != null && this.timeToMatch.containsKey(startTime)) {
-            List<Match> matchList = this.timeToMatch.get(startTime);
-            matchList.remove(match);
-            if (matchList.isEmpty()) {
-                this.timeToMatch.remove(startTime);
-            } else {
-                this.timeToMatch.put(startTime, matchList);
+        if (startTime != null) {
+            if(this.timeToMatch.containsKey(startTime)){
+                List<Match> matchList = this.timeToMatch.get(startTime);
+                matchList.remove(match);
+                if (matchList.isEmpty()) {
+                    this.timeToMatch.remove(startTime);
+                } else {
+                    this.timeToMatch.put(startTime, matchList);
+                }
             }
+            this.sortedEvents.remove(new Event("rideStart",startTime,match));
         }
 
         List<Agent> matchPeople = match.getAgents();
@@ -897,6 +840,8 @@ public class RidePooling extends MobilityMode {
 
         this.matchToStartTime.put(match, startTime);
         this.matchToEndTime.put(match, endTime);
+        this.sortedEvents.add(new Event("rideStart",startTime,match));
+        Collections.sort(sortedEvents);
         Map<LocalDateTime, Coordinate> map = vehiclePositions.get(match.getVehicle());
         List<LocalDateTime> times = new ArrayList<>(map.keySet());
         if (times.contains(startTime) || times.contains(endTime) || startTime.equals(endTime)) {
@@ -1359,7 +1304,7 @@ public class RidePooling extends MobilityMode {
         if (bestSolution != null) {
             VehicleRoute route = ((List<VehicleRoute>) bestSolution.getRoutes()).get(0);
 
-            List<AgentWithConstraints> agentsOfMatch = new ArrayList<>(agents.stream().filter(a -> a instanceof AgentWithConstraints).map(a -> (AgentWithConstraints) a).toList());
+            List<AgentWithConstraints> agentsOfMatch = new ArrayList<>(match.getAgents().stream().filter(a -> a instanceof AgentWithConstraints).map(a -> (AgentWithConstraints) a).toList());
             if (!justGetSolution) {
                 agentsOfMatch.add((AgentWithConstraints) request.getAgent());
             }
@@ -1436,7 +1381,7 @@ public class RidePooling extends MobilityMode {
                 newEndTime = getEndTime(bestSolution, newStartTime);
             }
 
-            if (bestSolution.getUnassignedJobs().isEmpty() && rideTimeIsAcceptedByAgents(bestSolution, agentsOfMatch, match.getTypeOfGrouping()) && !newStartTime.isBefore(earliestDriveStart) && newStartTime.isAfter(this.timeCounter) && !newEndTime.isAfter(LocalDateTime.parse("03.02.2023 02:00:00", GeneralManager.dateTimeFormatter)) && fitsTimeConstraints(route, match, newStartTime, newEndTime) && fitVehiclePositions(match, newEndTime, bestSolution) && !timeWindowsAreBroken(bestSolution)) {
+            if (bestSolution.getUnassignedJobs().isEmpty() && rideTimeIsAcceptedByAgents(bestSolution, agentsOfMatch, match.getTypeOfGrouping()) && !newStartTime.isBefore(earliestDriveStart) && newStartTime.isAfter(this.currentEventTime) && !newEndTime.isAfter(LocalDateTime.parse("03.02.2023 02:00:00", GeneralManager.dateTimeFormatter)) && fitsTimeConstraints(route, match, newStartTime, newEndTime) && fitVehiclePositions(match, newEndTime, bestSolution) && !timeWindowsAreBroken(bestSolution)) {
                 if ((matchToStartTime.containsKey(match) && !matchToStartTime.get(match).equals(newStartTime) && vehiclePositions.get(match.getVehicle()).containsKey(newStartTime)) || (matchToEndTime.containsKey(match) && !matchToEndTime.get(match).equals(newEndTime) && vehiclePositions.get(match.getVehicle()).containsKey(newEndTime)) || newStartTime.equals(newEndTime)) {
                     //System.out.println("overlap");
                     return false;
@@ -1590,6 +1535,8 @@ public class RidePooling extends MobilityMode {
                 } else {
                     timeToMatch.put(startTime, timeMatches);
                 }
+                this.sortedEvents.remove(new Event("rideStart",startTime,nextMatch));
+
                 route = ((List<VehicleRoute>) matchToSolution.get(nextMatch).getRoutes()).get(0);
                 nextMatch.setEndPosition(Coordinate.locationToCoordinate(route.getActivities().get(route.getActivities().size() - 1).getLocation()));
                 TourActivity startActivity = route.getActivities().get(0);
@@ -1618,6 +1565,7 @@ public class RidePooling extends MobilityMode {
                 }
                 timeMatches.add(nextMatch);
                 timeToMatch.put(newStartTime, timeMatches);
+                this.sortedEvents.add(new Event("rideStart",newStartTime,nextMatch));
                 vehiclePositions.get(nextMatch.getVehicle()).put(newStartTime, nextMatch.getStartPosition());
                 vehiclePositions.get(nextMatch.getVehicle()).put(newEndTime, nextMatch.getEndPosition());
                 return true;
@@ -1769,11 +1717,6 @@ public class RidePooling extends MobilityMode {
 
 
     public Ride matchToRide(Match match) {
-        for (Agent a : match.getAgents()) {
-            if (a.getId() == 9078) {
-                int f = 2;
-            }
-        }
         VehicleRoutingProblemSolution solution = matchToSolution.get(match);
         Ride ride;
         VehicleRoute route = ((List<VehicleRoute>) solution.getRoutes()).get(0);
@@ -2047,7 +1990,7 @@ public class RidePooling extends MobilityMode {
             vehicleEmissions.put(vehicle, vehicleEmission);
         }
         if (!checkConstraints(ride)) {
-            int f = 2;
+            int f = 2;//TODO
         }
     }
 
@@ -2178,7 +2121,7 @@ public class RidePooling extends MobilityMode {
         Coordinate oldendposition = null;
 
         if (vehiclePositions.get(match.getVehicle()).keySet().size() % 2 == 0) {
-            int f = 2;
+            int f = 2;//TODO
         }
 
         boolean result = false;

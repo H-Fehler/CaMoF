@@ -44,47 +44,6 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
-import camof.AgentWithConstraints;
-import com.graphhopper.GHRequest;
-import com.graphhopper.GHResponse;
-import com.graphhopper.ResponsePath;
-import com.graphhopper.jsprit.core.algorithm.VehicleRoutingAlgorithm;
-import com.graphhopper.jsprit.core.algorithm.box.Jsprit;
-import com.graphhopper.jsprit.core.algorithm.state.StateManager;
-import com.graphhopper.jsprit.core.problem.Location;
-import com.graphhopper.jsprit.core.problem.VehicleRoutingProblem;
-import com.graphhopper.jsprit.core.problem.constraint.ConstraintManager;
-import com.graphhopper.jsprit.core.problem.constraint.HardActivityConstraint;
-import com.graphhopper.jsprit.core.problem.cost.VehicleRoutingTransportCosts;
-import com.graphhopper.jsprit.core.problem.job.Service;
-import com.graphhopper.jsprit.core.problem.solution.VehicleRoutingProblemSolution;
-import com.graphhopper.jsprit.core.problem.solution.route.VehicleRoute;
-import com.graphhopper.jsprit.core.problem.solution.route.activity.TourActivity;
-import com.graphhopper.jsprit.core.problem.vehicle.VehicleImpl;
-import com.graphhopper.jsprit.core.problem.vehicle.VehicleType;
-import com.graphhopper.jsprit.core.problem.vehicle.VehicleTypeImpl;
-import com.graphhopper.jsprit.core.util.Solutions;
-import com.graphhopper.util.shapes.GHPoint;
-import camof.GeneralManager;
-import camof.modeexecution.*;
-import camof.modeexecution.carmodels.StandInVehicle;
-import camof.modeexecution.groupings.Match;
-import camof.modeexecution.groupings.Ride;
-import camof.modeexecution.groupings.Stop;
-import camof.modeexecution.groupings.Stopreason;
-import camof.modeexecution.mobilitymodels.modehelpers.CommonFunctionHelper;
-import camof.modeexecution.mobilitymodels.tsphelpers.ActivityOrderConstraint;
-import camof.modeexecution.mobilitymodels.tsphelpers.ActivityWaitConstraintOneAllowed;
-import camof.modeexecution.mobilitymodels.tsphelpers.TransportCosts;
-import org.apache.commons.lang3.stream.Streams;
-import org.hsqldb.util.CSVWriter;
-
-import java.io.File;
-import java.io.PrintWriter;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 
@@ -122,7 +81,6 @@ public class RideSharing extends MobilityMode {
         temporaryMatchToSolution = new HashMap<>();
         activeMatches = new ArrayList<>();
         finishedMatches = new ArrayList<>();
-        drivers = new ArrayList<>();
         pendingHomeRequests = new ArrayList<>();
         secondsBetweenDropOffs = new HashMap<>();
         sortedEvents = new ArrayList<>();
@@ -161,7 +119,7 @@ public class RideSharing extends MobilityMode {
         List<Agent> willingAgents = new ArrayList<>(this.agents);
         CommonFunctionHelper.filterWilling(ModeExecutionManager.percentOfWillingStudents,willingAgents,unwillingAgents);
         for(Agent agent : this.unwillingAgents){
-            this.letAgentDriveNormally(agent);
+            CommonFunctionHelper.letAgentDriveNormally(agent,sortedEvents,matchToStartTime);
         }
 
         for (Request request : splitRequestsInTwo(willingAgents)) {
@@ -214,15 +172,13 @@ public class RideSharing extends MobilityMode {
             if(event.getType().equals("requestArrival")){
                 requestCounter++;
                 Request request = (Request) event.getEventObject();
-                if(request.getAgent().getId()==53){
-                    int f = 2;
-                }
                 findMatch(request);
                 countOf5percentStepsForRequests = (int) Math.floor(((double) requestCounter / requestSum) * 20);
             }else if(event.getType().equals("rideStart")) {
                 Match match = (Match) event.getEventObject();
                 calculateMetrics(matchToRide(match));
             }
+            this.sortedEvents.remove(0);
 
             countOf5percentSteps = (int) Math.floor(((requestSum-(sortedEvents.size()-1))/(double)requestSum) * 20);
             progressBar = "Request progress: |" + "=".repeat(countOf5percentStepsForRequests) + " ".repeat(20 - countOf5percentStepsForRequests) + "|\t\tTotal progress: |" + "=".repeat(countOf5percentSteps) + " ".repeat(20 - countOf5percentSteps) + "|\r";
@@ -230,7 +186,6 @@ public class RideSharing extends MobilityMode {
                 System.out.print(progressBar);
                 lastProgress = progressBar;
             }
-            this.sortedEvents.remove(0);
         }
 
         for (Request pendingRequest : this.pendingHomeRequests) {
@@ -345,22 +300,38 @@ public class RideSharing extends MobilityMode {
 
     @Override
     public double getFinishedTotalCosts() {
-        return 0;
+        double totalCosts = 0.0;
+        for(Agent agent : this.agents){
+            totalCosts += getCosts().get(agent);
+        }
+        return totalCosts;
     }
 
     @Override
     public double getFinishedTotalEmissions() {
-        return 0;
+        double totalEmissions = 0.0;
+        for(Agent agent : this.agents){
+            totalEmissions += getEmissions().get(agent);
+        }
+        return totalEmissions;
     }
 
     @Override
     public double getFinishedTotalKmTravelled() {
-        return 0;
+        double totalKm = 0.0;
+        for(Agent agent : this.agents){
+            totalKm += getKmTravelled().get(agent);
+        }
+        return totalKm;
     }
 
     @Override
     public double getFinishedTotalMinutesTravelled() {
-        return 0;
+        double totalMinutes = 0.0;
+        for(Agent agent : this.agents){
+            totalMinutes += getMinutesTravelled().get(agent);
+        }
+        return totalMinutes;
     }
 
     @Override
@@ -597,9 +568,8 @@ public class RideSharing extends MobilityMode {
 
 
     public void setMetrics(Agent agent, Ride ride, Map<Agent, Double> agentToDistance, Map<Agent, Double> agentToTime) {
-
         Set<Object> set;
-        if (agent.equals(ride.getDriver())) {
+        if (agent.equals(ride.getDriver()) || this.handleLost && this.lost.containsKey(agent)) {
             double co2 = (agentToDistance.get(agent) / 1000) * agent.getCar().getConsumptionPerKm() * agent.getCar().getCo2EmissionPerLiter();
             double costPerKm = this.handleLost && this.lost.containsKey(agent) ? 0.3 : agent.getCar().getConsumptionPerKm() * agent.getCar().getPricePerLiter();
             double cost = (agentToDistance.get(agent) / 1000) * costPerKm;
@@ -644,9 +614,6 @@ public class RideSharing extends MobilityMode {
 
 
     public Ride matchToRide(Match match) {
-        if(match.getAgents().get(0).getId()==53){
-            int f = 2;
-        }
         VehicleRoutingProblemSolution solution = matchToSolution.get(match);
         Ride ride;
 
@@ -1093,22 +1060,6 @@ public class RideSharing extends MobilityMode {
             this.rides.add(ride);
             calculateMetrics(ride);
         }
-    }
-
-
-    public void letAgentDriveNormally(Agent agent){
-        List<Agent> matchAgents = new ArrayList<>();
-        matchAgents.add(agent);
-        Match toMatch = new Match(matchAgents, new HashMap<>(), agent, agent.getCar(), agent.getHomePosition(), agent.getRequest().getDropOffPosition(), DirectionType.DRIVETOUNI, agent.getRequest().getArrivalInterval().getStart(), agent.getRequest().getArrivalInterval().getEnd());
-
-        LocalDateTime toStartTime = CommonFunctionHelper.calculateNecessaryDriveStartTime(agent.getRequest());
-        LocalDateTime backStartTime = agent.getRequest().getFavoredDepartureTime();
-        Match backMatch = new Match(matchAgents, new HashMap<>(), agent, agent.getCar(), agent.getRequest().getDropOffPosition(), agent.getHomePosition(), DirectionType.DRIVEHOME, agent.getRequest().getDepartureInterval().getStart(), agent.getRequest().getDepartureInterval().getEnd());
-        sortedEvents.add(new Event("rideStart",toStartTime,toMatch));
-        matchToStartTime.put(toMatch, toStartTime);
-        sortedEvents.add(new Event("rideStart",backStartTime,backMatch));
-        matchToStartTime.put(backMatch, backStartTime);
-        Collections.sort(sortedEvents);
     }
 
 

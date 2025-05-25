@@ -130,9 +130,7 @@ public class MarkerOutput {
 
                             double distance = JTS.orthodromicDistance(homeCoordinate,campusCoordinate, DefaultGeographicCRS.WGS84);
                             distance = distance/1000;
-                            if(distance<lowerRadius && (uniPostcode.equals("97080") || uniPostcode.equals("97074A") || uniPostcode.equals("97074B"))){
-                                int f = 2;
-                            }
+
                             if(distance <= upperRadius && distance>=lowerRadius){
 
                                 JSONObject color = new JSONObject();

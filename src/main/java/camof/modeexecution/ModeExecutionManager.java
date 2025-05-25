@@ -97,7 +97,7 @@ public class ModeExecutionManager {
         if(mode.checkIfConstraintsAreBroken(agents)){
             throw new RuntimeException("Constraints of mode " + modeName + " were broken.");
         }
-        mode.writeResults(modeName,resultPath);
+        mode.writeResults(agents,modeName,resultPath);
         mode.writeAdditionalResults(resultPath);
         finishedModes.put(mode.getName(),mode);
     }
@@ -199,7 +199,7 @@ public class ModeExecutionManager {
         if(mode.checkIfConstraintsAreBroken(agents)){
             throw new RuntimeException("Constraints were broken.");
         }
-        mode.writeResults(mode.getName()==null?"":mode.getName(),"");
+        mode.writeResults(agents,mode.getName()==null?"":mode.getName(),"");
         mode.writeAdditionalResults("");
     }
 

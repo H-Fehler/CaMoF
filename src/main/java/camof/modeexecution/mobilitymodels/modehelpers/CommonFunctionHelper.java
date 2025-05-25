@@ -1,6 +1,7 @@
 package camof.modeexecution.mobilitymodels.modehelpers;
 
 import camof.AgentWithConstraints;
+import camof.modeexecution.groupings.Match;
 import com.graphhopper.GHRequest;
 import com.graphhopper.GHResponse;
 import com.graphhopper.GraphHopper;
@@ -345,6 +346,22 @@ public class CommonFunctionHelper {
             sum+=metricValues.get(agent);
         }
         return sum;
+    }
+
+
+    public static void letAgentDriveNormally(Agent agent, List<Event> sortedEvents,Map<Match, LocalDateTime> matchToStartTime){
+        List<Agent> matchAgents = new ArrayList<>();
+        matchAgents.add(agent);
+        Match toMatch = new Match(matchAgents, new HashMap<>(), agent, agent.getCar(), agent.getHomePosition(), agent.getRequest().getDropOffPosition(), DirectionType.DRIVETOUNI, agent.getRequest().getArrivalInterval().getStart(), agent.getRequest().getArrivalInterval().getEnd());
+
+        LocalDateTime toStartTime = CommonFunctionHelper.calculateNecessaryDriveStartTime(agent.getRequest());
+        LocalDateTime backStartTime = agent.getRequest().getFavoredDepartureTime();
+        Match backMatch = new Match(matchAgents, new HashMap<>(), agent, agent.getCar(), agent.getRequest().getDropOffPosition(), agent.getHomePosition(), DirectionType.DRIVEHOME, agent.getRequest().getDepartureInterval().getStart(), agent.getRequest().getDepartureInterval().getEnd());
+        sortedEvents.add(new Event("rideStart",toStartTime,toMatch));
+        matchToStartTime.put(toMatch, toStartTime);
+        sortedEvents.add(new Event("rideStart",backStartTime,backMatch));
+        matchToStartTime.put(backMatch, backStartTime);
+        Collections.sort(sortedEvents);
     }
 
 }

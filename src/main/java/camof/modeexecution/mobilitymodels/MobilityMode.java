@@ -44,6 +44,7 @@ public abstract class MobilityMode {
 
     public MobilityMode(){
         this.graphHopper = ModeExecutionManager.graphHopper;
+        drivers = new ArrayList<>();
         emissions = new HashMap<>();
         costs = new HashMap<>();
         kmTravelled = new HashMap<>();
@@ -187,7 +188,7 @@ public abstract class MobilityMode {
         this.drivers = drivers;
     }
 
-    public void writeResults(String modeName, String resultsFolder){
+    public void writeResults(List<Agent> agents, String modeName, String resultsFolder){
         double averageSeatCount = 0;
         double averageSeatCountToUni = 0;
         int countOfToUni = 0;
@@ -296,6 +297,7 @@ public abstract class MobilityMode {
             for(String data : dataLines){
                 pw.println(data);
             }
+            pw.close();
         }catch (Exception e){
             throw new RuntimeException(e.getMessage());
         }
@@ -305,6 +307,7 @@ public abstract class MobilityMode {
             for(String data : dataLines2){
                 pw.println(data);
             }
+            pw.close();
         }catch (Exception e){
             throw new RuntimeException(e.getMessage());
         }
@@ -315,6 +318,7 @@ public abstract class MobilityMode {
             for(String data : dataLines3){
                 pw.println(data);
             }
+            pw.close();
         }catch (Exception e){
             throw new RuntimeException(e.getMessage());
         }
