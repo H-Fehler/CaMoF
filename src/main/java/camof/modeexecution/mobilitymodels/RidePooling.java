@@ -628,51 +628,6 @@ public class RidePooling extends MobilityMode {
         }
     }
 
-    @Override
-    public Map<Agent, Double> getEmissions() {
-        return null;
-    }
-
-    @Override
-    public Map<Agent, Double> getCosts() {
-        return null;
-    }
-
-    @Override
-    public Map<Agent, Double> getKmTravelled() {
-        return null;
-    }
-
-    @Override
-    public Map<Agent, Double> getMinutesTravelled() {
-        return null;
-    }
-
-    @Override
-    public Map<Set<Object>, Double> getOneWayEmissions() {
-        return null;
-    }
-
-    @Override
-    public Map<Set<Object>, Double> getOneWayCosts() {
-        return null;
-    }
-
-    @Override
-    public Map<Set<Object>, Double> getOneWayKmTravelled() {
-        return null;
-    }
-
-    @Override
-    public Map<Set<Object>, Double> getOneWayMinutesTravelled() {
-        return null;
-    }
-
-    @Override
-    public Map<Agent, List<Ride>> getAgentToRides() {
-        return null;
-    }
-
 
     public void findMatch(Request request) {
         LocalDateTime requestIntervalStart;
@@ -1989,9 +1944,6 @@ public class RidePooling extends MobilityMode {
             vehicleCosts.put(vehicle, vehicleCost);
             vehicleEmissions.put(vehicle, vehicleEmission);
         }
-        if (!checkConstraints(ride)) {
-            int f = 2;//TODO
-        }
     }
 
 
@@ -2240,27 +2192,43 @@ public class RidePooling extends MobilityMode {
 
     @Override
     public List<Agent> getFinishedDrivers() {
-        return null;
+        return this.drivers;
     }
 
     @Override
     public double getFinishedTotalCosts() {
-        return 0;
+        double totalCosts = 0.0;
+        for(Agent agent : this.agents){
+            totalCosts += getCosts().get(agent);
+        }
+        return totalCosts;
     }
 
     @Override
     public double getFinishedTotalEmissions() {
-        return 0;
+        double totalEmissions = 0.0;
+        for(Agent agent : this.agents){
+            totalEmissions += getEmissions().get(agent);
+        }
+        return totalEmissions;
     }
 
     @Override
     public double getFinishedTotalKmTravelled() {
-        return 0;
+        double totalKm = 0.0;
+        for(Agent agent : this.agents){
+            totalKm += getKmTravelled().get(agent);
+        }
+        return totalKm;
     }
 
     @Override
     public double getFinishedTotalMinutesTravelled() {
-        return 0;
+        double totalMinutes = 0.0;
+        for(Agent agent : this.agents){
+            totalMinutes += getMinutesTravelled().get(agent);
+        }
+        return totalMinutes;
     }
 
     @Override
