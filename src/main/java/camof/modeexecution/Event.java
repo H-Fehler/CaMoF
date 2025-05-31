@@ -34,7 +34,13 @@ public class Event implements Comparable<Event>{
         }else if(event.eventStart.isAfter(this.eventStart)){
             return -1;
         }else{
-            return 0;
+            if(event.type.equals("rideStart")&&this.type.equals("requestArrival")){
+                return 1;
+            }else if(this.type.equals("rideStart")&&event.type.equals("requestArrival")){
+                return -1;
+            }else{
+                return 0;
+            }
         }
     }
 

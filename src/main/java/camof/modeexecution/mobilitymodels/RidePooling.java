@@ -103,7 +103,6 @@ public class RidePooling extends MobilityMode {
         super();
         comparing = true;
         this.compareMode = ModeExecutionManager.finishedModes.get(ModeExecutionManager.compareModes.get(this.getName()));
-        this.compareAngle = (double) 360 / countOfGroups;
         sortedEvents = new ArrayList<>();
         assignedRequests = new HashMap<>();
         compareVector = new Coordinate(0.0, 1.0);
@@ -150,6 +149,7 @@ public class RidePooling extends MobilityMode {
         secondsBetweenDropOffs = new HashMap<>();
         centralCoordinate = new Coordinate(((JSONObject)ModeExecutionManager.configValues.get("centralCoordinate")).getDouble("longitude"),((JSONObject)ModeExecutionManager.configValues.get("centralCoordinate")).getDouble("latitude"));
         countOfGroups = (int) ModeExecutionManager.configValues.get("countOfGroups");
+        compareAngle = (double) 360 / countOfGroups;
         radiusToExclude = (double) ModeExecutionManager.configValues.get("radiusToExclude");
         busCount = (int) ModeExecutionManager.configValues.get("bus count");
 
@@ -311,9 +311,7 @@ public class RidePooling extends MobilityMode {
         requestCounter = 0;
         String progressBar;
         int requestSum = this.sortedEvents.size();
-        double eventSum = 1.5 * this.sortedEvents.size();
         int requestCounter = 0;
-        int countOf5percentSteps;
         int countOf5percentStepsForRequests=0;
         String lastProgress = "";
 
@@ -323,6 +321,9 @@ public class RidePooling extends MobilityMode {
             if(event.getType().equals("requestArrival")){
                 requestCounter++;
                 Request request = (Request) event.getEventObject();
+                if(request.getAgent().getId()==12640){
+                    int f = 2;
+                }
                 findMatch(request);
                 countOf5percentStepsForRequests = (int) Math.floor(((double) requestCounter / requestSum) * 20);
             }else if(event.getType().equals("rideStart")) {
@@ -332,15 +333,10 @@ public class RidePooling extends MobilityMode {
             this.sortedEvents.remove(0);
             Collections.sort(sortedEvents);
 
-            countOf5percentSteps = (int) Math.floor(((eventSum-(sortedEvents.size()-1))/eventSum) * 20);
-            try{
-                progressBar = "Request progress: |" + "=".repeat(countOf5percentStepsForRequests) + " ".repeat(20 - countOf5percentStepsForRequests) + "|\t\tTotal progress: |" + "=".repeat(countOf5percentSteps) + " ".repeat(20 - countOf5percentSteps) + "|\r";
-                if (!progressBar.equals(lastProgress)) {
-                    System.out.print(progressBar);
-                    lastProgress = progressBar;
-                }
-            }catch (Exception e){
-                int f = 2;
+            progressBar = "Request progress: |" + "=".repeat(countOf5percentStepsForRequests) + " ".repeat(20 - countOf5percentStepsForRequests) + "|\r";
+            if (!progressBar.equals(lastProgress)) {
+                System.out.print(progressBar);
+                lastProgress = progressBar;
             }
         }
 
@@ -691,7 +687,7 @@ public class RidePooling extends MobilityMode {
         Set<Object> set2 = new HashSet<>();
         set2.add(fromUniRide);
         set2.add(agent);
-        path = CommonFunctionHelper.getSimpleBestGraphhopperPath(this.graphHopper,toUniRide.getStartPosition(),toUniRide.getEndPosition());
+        path = CommonFunctionHelper.getSimpleBestGraphhopperPath(this.graphHopper,fromUniRide.getStartPosition(),fromUniRide.getEndPosition());
         distance = path.getDistance()/1000.0;
         timeInMinutes = path.getTime()/60000L;
         time = (double) timeInMinutes;
