@@ -321,9 +321,6 @@ public class RidePooling extends MobilityMode {
             if(event.getType().equals("requestArrival")){
                 requestCounter++;
                 Request request = (Request) event.getEventObject();
-                if(request.getAgent().getId()==12640){
-                    int f = 2;
-                }
                 findMatch(request);
                 countOf5percentStepsForRequests = (int) Math.floor(((double) requestCounter / requestSum) * 20);
             }else if(event.getType().equals("rideStart")) {
@@ -2194,7 +2191,10 @@ public class RidePooling extends MobilityMode {
     @Override
     public double getFinishedTotalCosts() {
         double totalCosts = 0.0;
-        for(Agent agent : this.agents){
+        for(Vehicle vehicle : this.vehicles){
+            totalCosts += vehicleCosts.get(vehicle);
+        }
+        for(Agent agent : this.drivers){
             totalCosts += getCosts().get(agent);
         }
         return totalCosts;
@@ -2203,7 +2203,10 @@ public class RidePooling extends MobilityMode {
     @Override
     public double getFinishedTotalEmissions() {
         double totalEmissions = 0.0;
-        for(Agent agent : this.agents){
+        for(Vehicle vehicle : this.vehicles){
+            totalEmissions += vehicleEmissions.get(vehicle);
+        }
+        for(Agent agent : this.drivers){
             totalEmissions += getEmissions().get(agent);
         }
         return totalEmissions;
@@ -2212,7 +2215,10 @@ public class RidePooling extends MobilityMode {
     @Override
     public double getFinishedTotalKmTravelled() {
         double totalKm = 0.0;
-        for(Agent agent : this.agents){
+        for(Vehicle vehicle : this.vehicles){
+            totalKm += vehicleKmTravelled.get(vehicle);
+        }
+        for(Agent agent : this.drivers){
             totalKm += getKmTravelled().get(agent);
         }
         return totalKm;
@@ -2221,7 +2227,10 @@ public class RidePooling extends MobilityMode {
     @Override
     public double getFinishedTotalMinutesTravelled() {
         double totalMinutes = 0.0;
-        for(Agent agent : this.agents){
+        for(Vehicle vehicle : this.vehicles){
+            totalMinutes += vehicleMinutesTravelled.get(vehicle);
+        }
+        for(Agent agent : this.drivers){
             totalMinutes += getMinutesTravelled().get(agent);
         }
         return totalMinutes;
